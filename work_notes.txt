@@ -1,0 +1,40 @@
+I want something that fits on my GPU using full-precision and that doesn't require LoRA finetuning. I just think it's simpler given the time constraints.
+
+So I'm curious to look at frontier small VLMs like:
+- Qwen2VL (2B) [Link](https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct)
+- SmolVLM (2B) [Link](https://huggingface.co/HuggingFaceTB/SmolVLM-Instruct), [Blog](https://huggingface.co/blog/smolvlm)
+- PaliGemma (3B) [Link](https://huggingface.co/google/paligemma-3b-pt-224)
+
+Confirmed: Qwen2VL can process multiple images in a single input.
+
+Idea: Finetune the Adapter and the LLM components, not the ViT.
+(Idea)
+- The base vision encoder is already good at identifying objects and scenes
+- Idiomatic understanding happens at the connection and interpretation layers
+- The adapter layers are crucial for connecting visual concepts to linguistic meanings
+- This is where the "bridge" between learning visual content and figurative meaning happens
+
+"The idiomatic understanding happens in how visual features are mapped to language (adapter) and how those mappings are interpreted (LLM)"
+
+
+
+(venv) sam@pop-os:~/code/ucsc/243/admire/admire-finetuning-sam$ pip install "unsloth[cu126-torch251] @ git+https://github.com/unslothai/unsloth.git"
+Collecting unsloth@ git+https://github.com/unslothai/unsloth.git (from unsloth[cu126-torch251]@ git+https://github.com/unslothai/unsloth.git)
+  Cloning https://github.com/unslothai/unsloth.git to /tmp/pip-install-uu466_lh/unsloth_84e3f57e244744c49f25628bde6f1fab
+  Running command git clone --filter=blob:none --quiet https://github.com/unslothai/unsloth.git /tmp/pip-install-uu466_lh/unsloth_84e3f57e244744c49f25628bde6f1fab
+  Resolved https://github.com/unslothai/unsloth.git to commit 8558bc92b06f9128499484ef737fa71b966ffc23
+  Installing build dependencies ... done
+  Getting requirements to build wheel ... done
+  Preparing metadata (pyproject.toml) ... done
+WARNING: unsloth 2024.11.10 does not provide the extra 'cu126-torch251'
+Building wheels for collected packages: unsloth
+  Building wheel for unsloth (pyproject.toml) ... done
+  Created wheel for unsloth: filename=unsloth-2024.11.10-py3-none-any.whl size=166794 sha256=0c64c1613383f9d50ecb42189bb1c26c1566c8791bacc1e37cf5da50ac286491
+  Stored in directory: /tmp/pip-ephem-wheel-cache-p9_j0tgl/wheels/60/3e/1f/e576c07051d90cf64b6a41434d87ccf4db33fafd5343bf5de0
+Successfully built unsloth
+Installing collected packages: unsloth
+Successfully installed unsloth-2024.11.10
+
+NOTE: See the "WARNING" above... I'm not sure if my combination of torch/cuda is supported
+with unsloth here: https://github.com/unslothai/unsloth?tab=readme-ov-file#pip-installation 
+

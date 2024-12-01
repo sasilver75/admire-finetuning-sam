@@ -46,3 +46,26 @@ TODO: ADD LANGUAGE SUPPORT INFORMATION FOR EACH MODEL!
 - NVLM? Too big?
 - `meta-llama/Llama-3.2-11B-Vision-Instruct`
     - [HuggingFace](https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct)
+- `smolVLM`
+    - [Instruct HF](https://huggingface.co/HuggingFaceTB/SmolVLM-Instruct)
+    - [Base HF](https://huggingface.co/HuggingFaceTB/SmolVLM-Base)
+    - Blogpost: https://huggingface.co/blog/smolvlm
+
+
+SMOL Vision Language Models and their min GPU RAM requirements:
+- SmolVLM - 5.02GB
+- Qwen2-VL 2B - 13.70GB
+- InternVL2 2B - 10.52GB
+- PaliGemma 3B 448px - 6.72GB
+- moondream2 - 3.87GB
+- MiniCPM-V-2 - 7.88GB
+- MM1.5 1B - NaN
+
+Model	MMMU (val)	MathVista (testmini)	MMStar (val)	DocVQA (test)	TextVQA (val)	Min GPU RAM required (GB)
+SmolVLM	38.8	44.6	42.1	81.6	72.7	5.02
+Qwen2-VL 2B	41.1	47.8	47.5	90.1	79.7	13.70
+InternVL2 2B	34.3	46.3	49.8	86.9	73.4	10.52
+PaliGemma 3B 448px	34.9	28.7	48.3	32.2	56.0	6.72
+moondream2	32.4	24.3	40.3	70.5	65.2	3.87
+MiniCPM-V-2	38.2	39.8	39.1	71.9	74.1	7.88
+MM1.5 1B	35.8	37.2	0.0	81.0	72.5	NaN
