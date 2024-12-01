@@ -1,0 +1,32 @@
+repos:
+  - repo: https://github.com/nbQA-dev/nbQA  # Handles Black and isort for .ipynb files
+    rev: 1.7.1
+    hooks:
+      - id: nbqa-black
+        additional_dependencies: [black==24.10.0]  # These create isolated environments for the hook to run in, ensuring reproducible behavior; but we should match our installed version
+        name: Format notebooks with Black
+      - id: nbqa-isort
+        additional_dependencies: [isort==5.13.2]
+        name: Sort imports in notebooks
+  - repo: https://github.com/psf/black  # Handles Black for .py files
+    rev: 24.10.0
+    hooks:
+      - id: black  # Note that we don't have to do additional_dependencies here
+        language_version: python3.12
+        name: Black
+  - repo: https://github.com/pycqa/isort  # Handles isort for .py files
+    rev: 5.13.2  # Note that version matches with the one specified in
+    hooks:
+      - id: isort  # Note that we don't have to do additional_dependencies here
+        name: Sort imports
+  - repo: https://github.com/pre-commit/pre-commit-hooks  # Some built-in hooks that are useful.
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+        name: Check YAML
+      - id: check-json
+        name: Check JSON
+      - id: check-toml
+        name: Check TOML
+      - id: detect-private-key
+        name: Check for Private Keys
