@@ -61,7 +61,7 @@ model = FastVisionModel.get_peft_model(
 print("Loading dataset...")
 dataset_name = "UCSC-Admire/idiom-dataset-100-2024-11-11_14-37-58"
 dataset = load_dataset(dataset_name, split="train")
-dataset_dict = dataset.train_test_split(test_size=0.1, seed=42)
+dataset_dict = dataset.train_test_split(test_size=0.05, seed=42)
 train_dataset = dataset_dict["train"]
 eval_dataset = dataset_dict["test"]
 
@@ -117,10 +117,11 @@ trainer.train()
 # TODO: Test the same record, showing how predictions changed
 
 now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-finetune_name = f"Admire-Finetune-{now}"
+finetune_name = f"Admire-Qwen2VL-Finetune-{now}"
 # save locally
-model.save_pretrained_merged(finetune_name, tokenizer)
+# model.save_pretrained_merged(finetune_name, tokenizer)
 # push directly to HuggingFace
+# NOTE: This took like... 15 minutes to start actually working. Weird.
 model.push_to_hub_merged(
     f"UCSC-Admire/{finetune_name}",  # Format: "org_name/model_name"
     tokenizer, 
