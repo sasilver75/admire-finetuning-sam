@@ -118,7 +118,7 @@ trainer.train()
 
 now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 finetune_name = f"Admire-Qwen2VL-Finetune-{now}"
-# save locally
+# save locally NOTE: nevermind, we don't wanna do this.
 # model.save_pretrained_merged(finetune_name, tokenizer)
 # push directly to HuggingFace
 # NOTE: This took like... 15 minutes to start actually working. Weird.
