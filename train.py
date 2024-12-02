@@ -5,8 +5,15 @@ import random
 from transformers import AutoProcessor
 from trl import SFTTrainer, SFTConfig
 from unsloth.trainer import UnslothVisionDataCollator
-
+from datetime import datetime
+from dotenv import load_dotenv
+import os
 import utils
+
+load_dotenv()
+if os.getenv("HUGGINGFACE_TOKEN") is None:
+    raise ValueError("HUGGINGFACE_TOKEN is not set")
+hf_token = os.environ["HUGGINGFACE_TOKEN"]
 
 
 model_name = "Qwen/Qwen2-VL-2B-Instruct"
@@ -54,10 +61,15 @@ model = FastVisionModel.get_peft_model(
 print("Loading dataset...")
 dataset_name = "UCSC-Admire/idiom-dataset-100-2024-11-11_14-37-58"
 dataset = load_dataset(dataset_name, split="train")
+dataset_dict = dataset.train_test_split(test_size=0.1, seed=42)
+train_dataset = dataset_dict["train"]
+eval_dataset = dataset_dict["test"]
+
 
 # Convert the dataset to a user/assistant format, get the right instructions/response.
 print("Converting dataset to conversation format...")
-converted_dataset = [utils.convert_to_conversation(sample) for sample in dataset]
+converted_train = [utils.convert_to_conversation(sample) for sample in train_dataset]
+converted_eval = [utils.convert_to_conversation(sample) for sample in eval_dataset]
 
 # TODO: Test a record
 
@@ -70,7 +82,8 @@ trainer = SFTTrainer(
     model = model,
     tokenizer = tokenizer,
     data_collator = UnslothVisionDataCollator(model, tokenizer), # Must use!
-    train_dataset = converted_dataset,
+    train_dataset = converted_train,
+    eval_dataset = converted_eval,
     args = SFTConfig(
         per_device_train_batch_size = 1,  # SAmples processed per GPU forward pass # Even thuogh bs=1, we accumumulate gradients over 8 steps
         gradient_accumulation_steps = 8,  # Accumulate gradients over 8 steps before updating
@@ -87,7 +100,9 @@ trainer = SFTTrainer(
         seed = 3407,
         output_dir = "outputs",  # Directory to save model checkpoints
         report_to = "none",     # For Weights and Biases
-
+        evaluation_strategy = "steps",
+        eval_steps = 10,
+        per_device_eval_batch_size=1,
         # You MUST put the below items for vision finetuning:
         remove_unused_columns = False,
         dataset_text_field = "",
@@ -100,3 +115,14 @@ trainer = SFTTrainer(
 trainer.train()
 
 # TODO: Test the same record, showing how predictions changed
+
+now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+finetune_name = f"Admire-Finetune-{now}"
+# save locally
+model.save_pretrained_merged(finetune_name, tokenizer)
+# push directly to HuggingFace
+model.push_to_hub_merged(
+    f"UCSC-Admire/{finetune_name}",  # Format: "org_name/model_name"
+    tokenizer, 
+    token=hf_token
+)
