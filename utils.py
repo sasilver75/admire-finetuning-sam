@@ -1,10 +1,34 @@
 import random
 from PIL import Image
+import matplotlib.pyplot as plt
+import os
+from transformers import TrainerCallback
+import torch
+from unsloth import FastVisionModel
 
-def convert_to_conversation(sample: dict) -> dict:
+def convert_to_conversation(row: dict) -> dict:
+    """
+    Given a dictionary for a row in the datset, containing keys:
+    - id
+    - language
+    - compound
+    - sentence_type
+    - sentence
+    - style
+    - image_1_prompt
+    - image_1
+    ...
+    - image_5_prompt
+    - image_5
+
+    Generate a conversation turn between a user and an assitant, in which the users
+    asks the assistant to rank the images from most to least relevant, based on how
+    well they represent the compound (in either a literal or idiomatic sense, based
+    on how it's used in the sentence).
+    """
     # 1. Create list of (original_position, image) pairs
     original_images = [
-        (i, sample[f"image_{i}"])
+        (i, row[f"image_{i}"])
         for i in range(1, 6)
     ]
     
@@ -39,7 +63,17 @@ def convert_to_conversation(sample: dict) -> dict:
     Rank the images from most to least relevant, based on how well they represent the compound (in either a literal or idiomatic sense, based on how it's used in the sentence).
     Return the ranking of the images as a comma-separated list of the aliases, from most to least relevant.
     
-    As an example, if your predicted ranking from most to least relevant is B, C, A, E, D, then you should respond with "B, C, A, E, D"."""
+    As an example, if your predicted ranking from most to least relevant is B, C, A, E, D, then you should respond with "B, C, A, E, D".
+    
+    <compound>
+    {row["compound"]}
+    </compound>
+    <sentence>
+    {row["sentence"]}
+    </sentence>
+
+    Given your understanding of the compound and its correct interpretation given its use in the sentence, generate the appropriate ranking of the following images:
+    """
 
     correct_response = f"{', '.join(correct_order)}"
 
@@ -60,3 +94,114 @@ def convert_to_conversation(sample: dict) -> dict:
     ]
 
     return {"messages": conversation}
+
+
+class LossCallback(TrainerCallback):
+    def __init__(self):
+        self.training_losses = []
+        self.eval_losses = []
+        self.epochs = []
+        self.eval_epochs = []
+    
+    def on_init_end(self, args, state, control, **kwargs):
+        """Called at the end of trainer initialization"""
+        return control
+    
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs is not None:
+            # If it's a training log
+            if "loss" in logs:
+                self.training_losses.append(logs["loss"])
+                self.epochs.append(logs["epoch"])
+            # If it's an eval log
+            if "eval_loss" in logs:
+                self.eval_losses.append(logs["eval_loss"])
+                self.eval_epochs.append(logs["epoch"])
+
+def plot_loss(loss_callback: LossCallback, finetune_name: str):
+    plt.figure(figsize=(10, 6))
+    plt.plot(loss_callback.epochs, loss_callback.training_losses, label='Training Loss')
+    plt.plot(loss_callback.eval_epochs, loss_callback.eval_losses, label='Evaluation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Evaluation Loss')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the plot
+    if not os.path.exists("plots"):
+        os.makedirs("plots")
+    plt.savefig(f"plots/{finetune_name}.png")
+    plt.close()
+
+
+# TODO: This is untested and I think likely wrong...
+def test_sample(model, tokenizer, sample):
+    """Test a single sample with the model"""
+    FastVisionModel.for_inference(model)  # Enable inference mode
+    
+    # 1. Create list of (original_position, image) pairs
+    original_images = [(i, sample[f"image_{i}"]) for i in range(1, 6)]
+    
+    # 2. Create a shuffled version of this list
+    shuffled_images = original_images.copy()
+    random.shuffle(shuffled_images)
+    
+    # 3. Get just the images in shuffled order
+    images = [img for _, img in shuffled_images]
+    
+    # 4. Create mapping of original_position to letter (for checking correctness)
+    letters = list("ABCDE")
+    original_to_letter = {
+        orig_pos: letter
+        for (orig_pos, _), letter in zip(shuffled_images, letters)
+    }
+    
+    # The correct order would be:
+    correct_order = [original_to_letter[i] for i in range(1, 6)]
+    
+    instruction = f"""You are given a compound, its use in a sentence (which determines whether a compound should be interpreted literally or idiomatically), and five images.
+    The images have been given aliases of {', '.join(letters)}, respectively.
+    Rank the images from most to least relevant, based on how well they represent the compound (in either a literal or idiomatic sense, based on how it's used in the sentence).
+    Return the ranking of the images as a comma-separated list of the aliases, from most to least relevant.
+    
+    As an example, if your predicted ranking from most to least relevant is B, C, A, E, D, then you should respond with "B, C, A, E, D".
+    
+    <compound>
+    {sample["compound"]}
+    </compound>
+    <sentence>
+    {sample["sentence"]}
+    </sentence>
+
+    Given your understanding of the compound and its correct interpretation given its use in the sentence, generate the appropriate ranking of the following images:"""
+    
+    messages = [
+        {"role": "user", "content": [
+            {"type": "text", "text": instruction},
+            *[{"type": "image"} for _ in range(5)]
+        ]}
+    ]
+    
+    input_text = tokenizer.apply_chat_template(messages, add_generation_prompt=True)
+    
+    inputs = tokenizer(
+        images,  # These are now in shuffled order
+        input_text,
+        add_special_tokens=False,
+        return_tensors="pt"
+    ).to(model.device)
+    
+    outputs = model.generate(
+        **inputs, 
+        max_new_tokens=128,
+        use_cache=True, 
+        temperature=1.5, 
+        min_p=0.1
+    )
+    
+    prediction = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return {
+        'prediction': prediction,
+        'correct_order': ', '.join(correct_order)
+    }
