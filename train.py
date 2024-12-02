@@ -22,6 +22,7 @@ processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-2B-Instruct")
 # min_pixels = 256*28*28
 # max_pixels = 1280*28*28
 # processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-2B-Instruct", min_pixels=min_pixels, max_pixels=max_pixels)
+# Sam note: "By default, it uses the native resolution for input, but higher resolutions can enhance performance at the cost of more compute"
 
 messages = [
     {
