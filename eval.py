@@ -68,8 +68,14 @@ def load_finetuned_model(model_name: str) -> Tuple[Any, AutoProcessor]:  # Any b
     # Note: The processor is actually a combination of two components: ImageProcessor and Tokenizer
     processor = AutoProcessor.from_pretrained(model_name)
     
-    model.eval()  # Set to evaluation mode
+    print("\nProcessor Information:")
+    print(f"- Image processor type: {type(processor.image_processor)}")
+    print(f"- Image processor attributes: {dir(processor.image_processor)}")
+    print(f"- Tokenizer type: {type(processor.tokenizer)}")
+    
+    model.eval()
     return model, processor
+
 
 def convert_raw_sample(sample: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Image.Image], str]:
     """
@@ -146,6 +152,37 @@ def convert_dataset(dataset: Dataset) -> List[Tuple[List[Dict[str, Any]], List[I
         converted_data.append((conv, images, ranking))
     return converted_data
 
+def evaluate_sample_finetuned(model: Qwen2VLForConditionalGeneration, processor: AutoProcessor, 
+                            conversation: List[Dict[str, Any]], images: List[Image.Image], 
+                            expected_ranking: str) -> Tuple[str, str]:
+    """
+    Process a sample with a finetuned Unsloth model.
+    I'm not exactly sure why it needs special handling, but it does...
+    """
+    
+    # Just use the last user message (the ranking request) directly
+    input_text = conversation[-1]["content"]
+    
+    # Process inputs
+    inputs = processor(
+        text=input_text,
+        images=images,
+        return_tensors="pt"
+    ).to(model.device)
+    
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=32,
+        min_new_tokens=1,
+        do_sample=False,
+        pad_token_id=processor.tokenizer.pad_token_id
+    )
+    
+    prediction = processor.tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print(f"Raw model prediction: {prediction}")
+    
+    return prediction.strip(), expected_ranking
+
 def evaluate_sample(
     model: Qwen2VLForConditionalGeneration,
     processor: AutoProcessor,
@@ -154,7 +191,7 @@ def evaluate_sample(
     expected_ranking: str
 ) -> Optional[Tuple[str, str]]:
     """
-    Evaluates a single sample using the model.
+    Evaluates a single sample using the model (original Qwen model)
 
     Returns:
         Tuple[str, str]: Predicted ranking, expected ranking
@@ -224,6 +261,9 @@ def evaluate_sample(
             return None
             
         ranking_text = parts[-1].strip()
+        # If there's a trailing <|im_end|>, remove it!
+        if ranking_text.endswith("<|im_end|>"):
+            ranking_text = ranking_text[:-10]
         print(f"Extracted ranking: {ranking_text}")
         print(f"Expected ranking:  {expected_ranking.strip()}")
 
@@ -244,7 +284,8 @@ def evaluate_sample(
 def evaluate_model(
     model: Qwen2VLForConditionalGeneration,
     processor: AutoProcessor,
-    converted_test: List[Tuple[List[Dict[str, Any]], List[Image.Image], str]]
+    converted_test: List[Tuple[List[Dict[str, Any]], List[Image.Image], str]],
+    is_finetuned: bool = False
 ) -> Dict[str, float]:
     """
     Evaluates the model on the test set.
@@ -260,7 +301,10 @@ def evaluate_model(
     results = []
     
     for conversation, images, expected_ranking in tqdm(converted_test):
+        # if not is_finetuned:
         result = evaluate_sample(model, processor, conversation, images, expected_ranking)
+        # else:
+            # result = evaluate_sample_finetuned(model, processor, conversation, images, expected_ranking)
         if result is not None:  # TODO: Maybe we should count the number of occurrences? What does a result of None mean here?
             results.append(result)
     
@@ -317,23 +361,10 @@ def main():
     original_model, original_processor = load_original_model(ORIGINAL_MODEL_NAME)
     print("Original model loaded.")
 
-    # print("Processor Configuration:")
-    # print(f"- Image processor parameters:")
-    # print(f"  - do_resize: {original_processor.image_processor.do_resize}")
-    # print(f"  - do_rescale: {original_processor.image_processor.do_rescale}")
-    # print(f"  - do_normalize: {original_processor.image_processor.do_normalize}")
-    # print(f"  - min_pixels: {original_processor.image_processor.min_pixels}")
-    # print(f"  - max_pixels: {original_processor.image_processor.max_pixels}")
-    # print(f"- Tokenizer parameters:")
-    # print(f"  - vocab_size: {original_processor.tokenizer.vocab_size}")
-    # print(f"  - model_max_length: {original_processor.tokenizer.model_max_length}")
-    # print(f"  - padding_side: {original_processor.tokenizer.padding_side}")
-    # print(f"  - pad_token: {original_processor.tokenizer.pad_token}")
-
     # Load finetuned model and processor
-    # print("Loading finetuned model...")
-    # finetuned_model, finetuned_processor = load_finetuned_model(FINETUNED_MODEL_NAME)
-    # print("Finetuned model loaded.")
+    print("Loading finetuned model...")
+    finetuned_model, finetuned_processor = load_finetuned_model(FINETUNED_MODEL_NAME)
+    print("Finetuned model loaded.")
 
     # Convert test dataset to conversation format (if not already)
     print("Converting test dataset...")
@@ -349,19 +380,20 @@ def main():
     print("Original model evaluation completed.")
 
     # Evaluate finetuned model
-    # print("Evaluating finetuned model...")
-    # finetuned_metrics = evaluate_model(finetuned_model, finetuned_processor, converted_test)
-    # print("Finetuned model evaluation completed.")
+    print("Evaluating finetuned model...")
+    finetuned_metrics = evaluate_model(finetuned_model, finetuned_processor, converted_test, is_finetuned=True)
+    print("Finetuned model evaluation completed.")
 
     # Display Results
     print("\nEvaluation Results:")
     print("===================================")
     print("Original Model:")
-    print(f"Top-1 Accuracy: {original_metrics['top1_accuracy']:.3f}")
-    print(f"Spearman Correlation: {original_metrics['spearman_correlation']:.3f}")    # print("-----------------------------------")
-    # print("Finetuned Model:")
-    # print(f"Top-1 Accuracy: {finetuned_metrics['top1_accuracy']:.3f}")
-    # print(f"Spearman Correlation: {finetuned_metrics['mean_spearman_correlation']:.3f}")
+    print(f"Top-1 Accuracy: {original_metrics['top1_accuracy']:.5f}")
+    print(f"Spearman Correlation: {original_metrics['spearman_correlation']:.5f}")    # print("-----------------------------------")
+    print("-----------------------------------")
+    print("Finetuned Model:")
+    print(f"Top-1 Accuracy: {finetuned_metrics['top1_accuracy']:.5f}")
+    print(f"Spearman Correlation: {finetuned_metrics['spearman_correlation']:.5f}")
     print("===================================")
 
 if __name__ == "__main__":
