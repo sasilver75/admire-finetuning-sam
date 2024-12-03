@@ -18,6 +18,12 @@ ORIGINAL_MODEL_NAME = "Qwen/Qwen2-VL-2B-Instruct"
 FINETUNED_MODEL_NAME = "UCSC-Admire/Admire-Qwen2-VL-2B-Instruct-Finetune-2024-12-02_16-27-22"
 DATASET_NAME = "UCSC-Admire/idiom-dataset-561-2024-12-02_11-48-08"
 
+RANDOM_SEED = 42
+random.seed(RANDOM_SEED)
+torch.manual_seed(RANDOM_SEED)
+torch.cuda.manual_seed_all(RANDOM_SEED)
+
+
 def load_original_model(model_name: str) -> Tuple[Qwen2VLForConditionalGeneration, AutoProcessor]:
     """
     Loads the original Qwen2VL model and its processor.
@@ -300,18 +306,18 @@ def main():
     original_model, original_processor = load_original_model(ORIGINAL_MODEL_NAME)
     print("Original model loaded.")
 
-    print("Processor Configuration:")
-    print(f"- Image processor parameters:")
-    print(f"  - do_resize: {original_processor.image_processor.do_resize}")
-    print(f"  - do_rescale: {original_processor.image_processor.do_rescale}")
-    print(f"  - do_normalize: {original_processor.image_processor.do_normalize}")
-    print(f"  - min_pixels: {original_processor.image_processor.min_pixels}")
-    print(f"  - max_pixels: {original_processor.image_processor.max_pixels}")
-    print(f"- Tokenizer parameters:")
-    print(f"  - vocab_size: {original_processor.tokenizer.vocab_size}")
-    print(f"  - model_max_length: {original_processor.tokenizer.model_max_length}")
-    print(f"  - padding_side: {original_processor.tokenizer.padding_side}")
-    print(f"  - pad_token: {original_processor.tokenizer.pad_token}")
+    # print("Processor Configuration:")
+    # print(f"- Image processor parameters:")
+    # print(f"  - do_resize: {original_processor.image_processor.do_resize}")
+    # print(f"  - do_rescale: {original_processor.image_processor.do_rescale}")
+    # print(f"  - do_normalize: {original_processor.image_processor.do_normalize}")
+    # print(f"  - min_pixels: {original_processor.image_processor.min_pixels}")
+    # print(f"  - max_pixels: {original_processor.image_processor.max_pixels}")
+    # print(f"- Tokenizer parameters:")
+    # print(f"  - vocab_size: {original_processor.tokenizer.vocab_size}")
+    # print(f"  - model_max_length: {original_processor.tokenizer.model_max_length}")
+    # print(f"  - padding_side: {original_processor.tokenizer.padding_side}")
+    # print(f"  - pad_token: {original_processor.tokenizer.pad_token}")
 
     # Load finetuned model and processor
     # print("Loading finetuned model...")
