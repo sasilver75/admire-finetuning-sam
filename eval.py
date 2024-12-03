@@ -202,6 +202,8 @@ def evaluate_sample(
             
         ranking_text = parts[-1].strip()
         print(f"Extracted ranking: {ranking_text}")
+        print(f"Expected ranking:  {expected_ranking.strip()}")
+
         
         # Validate the ranking format
         letters = set("ABCDE,")
