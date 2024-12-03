@@ -72,7 +72,7 @@ def convert_to_conversation(row: dict) -> dict:
     {row["sentence"]}
     </sentence>
 
-    Given your understanding of the compound and its correct interpretation given its use in the sentence, generate the appropriate ranking of the following images:
+    Given your understanding of the compound and its correct interpretation given its use in the sentence, generate the appropriate ranking of these images.
     """
 
     correct_response = f"{', '.join(correct_order)}"
@@ -82,7 +82,7 @@ def convert_to_conversation(row: dict) -> dict:
             "role": "user",
             "content": [
                 {"type": "text", "text": instruction},
-                *[{"type": "image", "image": img.resize((448, 448))} for _, img in shuffled_images]
+                *[{"type": "image", "image": img.resize((448, 448))} for _, img in shuffled_images]  # TODO: SHOULD THIS GO FIRST?
             ]
         },
         {

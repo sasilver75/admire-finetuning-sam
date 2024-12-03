@@ -7,13 +7,18 @@ import numpy as np
 from tqdm import tqdm
 import utils
 import json
+import random
+import traceback
+from typing import Dict, List, Optional, Tuple, Any
+from datasets import Dataset
+from PIL import Image
 
 # Define model names
 ORIGINAL_MODEL_NAME = "Qwen/Qwen2-VL-2B-Instruct"
 FINETUNED_MODEL_NAME = "UCSC-Admire/Admire-Qwen2-VL-2B-Instruct-Finetune-2024-12-02_16-27-22"
 DATASET_NAME = "UCSC-Admire/idiom-dataset-561-2024-12-02_11-48-08"
 
-def load_original_model(model_name):
+def load_original_model(model_name: str) -> Tuple[Qwen2VLForConditionalGeneration, AutoProcessor]:
     """
     Loads the original Qwen2VL model and its processor.
 
@@ -33,7 +38,7 @@ def load_original_model(model_name):
     model.eval()  # Set to evaluation mode
     return model, processor
 
-def load_finetuned_model(model_name):
+def load_finetuned_model(model_name: str) -> Tuple[Any, AutoProcessor]:  # Any because FastVisionModel is from unsloth
     """
     Loads the finetuned model using Unsloth's FastVisionModel and its processor.
 
@@ -60,134 +65,202 @@ def load_finetuned_model(model_name):
     model.eval()  # Set to evaluation mode
     return model, processor
 
-def extract_letters(text):
-    # Find the last line that contains a comma-separated list of letters
-    lines = text.strip().split('\n')
-    for line in reversed(lines):
-        if ',' in line:
-            # Extract just the letters from the ranking
-            letters = [l.strip() for l in line.split(',')]
-            if all(len(letter) == 1 for letter in letters):
-                return letters
-    return []
-def evaluate_model(model, processor, dataset):
+def convert_raw_sample(sample: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Image.Image], str]:
     """
-    Evaluates a single model on the dataset.
+    Converts a raw dataset sample into (conversation, images, expected_output) format,
+    with proper shuffling of images and letter assignments.
+    """
+    # 1. Create list of (original_position, image) pairs
+    original_images = [
+        (i, sample[f"image_{i}"])
+        for i in range(1, 6)
+    ]
+    
+    # 2. Create a shuffled version of this list
+    shuffled_images = original_images.copy()
+    random.shuffle(shuffled_images)
+    
+    # 3. Assign letters A-E to the shuffled images
+    letters = list("ABCDE")
+    images_with_letters = [
+        (letter, image)
+        for letter, (_, image) in zip(letters, shuffled_images)
+    ]
+    
+    # 4. Create mapping of original_position to assigned letter
+    original_to_letter = {
+        orig_pos: letter
+        for (orig_pos, _), (letter, _) in zip(shuffled_images, images_with_letters)
+    }
+    
+    # 5. Get correct order (1->5 mapped to their assigned letters)
+    correct_order = [original_to_letter[i] for i in range(1, 6)]
+    correct_ranking = ", ".join(correct_order)
+    
+    # 6. Create conversation with placeholders
+    instruction = f"""You are given a compound, its use in a sentence (which determines whether a compound should be interpreted literally or idiomatically), and five images.
+    The images have been given aliases of A, B, C, D, E, respectively.
+    Rank the images from most to least relevant, based on how well they represent the compound (in either a literal or idiomatic sense, based on how it's used in the sentence).
+    Return the ranking of the images as a comma-separated list of the aliases, from most to least relevant.
+    
+    <compound>
+    {sample['compound']}
+    </compound>
+    <sentence>
+    {sample['sentence']}
+    </sentence>
+
+    Given your understanding of the compound and its correct interpretation given its use in the sentence, generate the appropriate ranking of the following images:
+    """
+    
+    conversation = [{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": instruction},
+            *[{"type": "image"} for _ in range(5)]  # placeholders
+        ]
+    }]
+    
+    # Return shuffled images in A,B,C,D,E order
+    shuffled_images_final = [img.resize((448, 448)) for _, img in images_with_letters]
+    
+    return conversation, shuffled_images_final, correct_ranking
+
+def convert_dataset(dataset: Dataset) -> List[Tuple[List[Dict[str, Any]], List[Image.Image], str]]:
+    """
+    Converts the entire dataset into evaluation format, using convert_raw_sample.
+    """
+    converted_data = []
+    for sample in dataset:
+        conv, images, ranking = convert_raw_sample(sample)
+        converted_data.append((conv, images, ranking))
+    return converted_data
+
+
+def debug_model_inputs(inputs: Dict[str, torch.Tensor]) -> None:
+    """Helper function for debugging model inputs"""
+    print("\nModel Input Keys:", inputs.keys())
+    for k, v in inputs.items():
+        if isinstance(v, torch.Tensor):
+            print(f"- {k}: shape={v.shape}, dtype={v.dtype}")
+
+def evaluate_sample(
+    model: Qwen2VLForConditionalGeneration,
+    processor: AutoProcessor,
+    conversation: List[Dict[str, Any]],
+    images: List[Image.Image],
+    expected_ranking: str
+) -> Optional[Tuple[str, str]]:
+    """
+    Evaluates a single sample using the model.
+    
     Args:
-        model: The model to evaluate.
-        processor: The corresponding processor.
-        dataset (list): The test dataset.
+        model: The Qwen2-VL model
+        processor: The model's processor
+        conversation: List containing the conversation with image placeholders
+        images: List of 5 PIL images (already shuffled and resized)
+        expected_ranking: String of expected ranking (e.g., "A, B, C, D, E")
+    
     Returns:
-        dict: Metrics including Top-1 Accuracy and Spearman's Correlation.
+        tuple: (predicted_ranking, expected_ranking) or None if processing failed
     """
-    correct_top1 = 0
-    total_samples = 0
-    sample_correlations = []
-
-    for conv_sample in tqdm(dataset, desc="Evaluating"):
-        try:
-            print("\nDEBUG - Processing Steps:")
-            
-            # 1. Log input structure
-            print("1. Input Messages Structure:")
-            messages = conv_sample.get("messages", [])
-            print(f"Messages: {messages}")
-
-            # Skip malformed samples
-            if len(messages) != 2:
-                print("Skipping malformed sample.")
-                continue
-
-            # 2. Process the chat template
-            instruction = messages[0]["content"]
-            print("\n2. Chat Template Output:")
-            chat_text = processor.tokenizer.apply_chat_template(
-                [{"role": "user", "content": instruction}],
-                add_generation_prompt=True
+    try:
+         # 1. Format conversation with chat template
+        text = processor.apply_chat_template(
+            conversation, 
+            tokenize=False, 
+            add_generation_prompt=True
+        )
+        print("\nChat Template Output:")
+        print(text)
+        
+        # 2. Process inputs
+        inputs = processor(
+            text=text,
+            images=images,
+            return_tensors="pt",
+            padding=True
+        )
+        
+        # 3. Debug model inputs
+        debug_model_inputs(inputs)
+        
+        # 4. Move to GPU and generate
+        inputs = {k: v.cuda() for k, v in inputs.items()}
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                do_sample=False,
+                max_new_tokens=32,
+                min_new_tokens=1,
+                pad_token_id=processor.tokenizer.pad_token_id
             )
-            print(f"Chat text: {chat_text}")
+        
+        # 5. Decode prediction
+        predicted_text = processor.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        print(f"\nModel prediction: {predicted_text}")
+        
+        return predicted_text.strip(), expected_ranking.strip()
+        
+    except Exception as e:
+        print(f"Error processing sample: {e}")
+        traceback.print_exc()
+        return None
 
-            # 3. Process inputs
-            images = [msg["content"] for msg in messages if isinstance(msg.get("content"), (list, dict)) and any(item.get("type") == "image" for item in msg["content"])]
-            inputs = processor(
-                text=[chat_text],
-                images=images,
-                padding=True,
-                return_tensors="pt"
-            )
-            print("\n3. Processor Outputs:")
-            print(f"Input IDs shape: {inputs.input_ids.shape}")
-            print(f"Pixel values shape: {inputs.pixel_values.shape}")
-
-            # Move inputs to GPU if available
-            if torch.cuda.is_available():
-                inputs = {k: v.cuda() for k, v in inputs.items()}
-                model.cuda()
-
-            # 4. Generate and process output
-            print("\n4. Model Output Analysis:")
-            with torch.no_grad():
-                outputs = model.generate(
-                    **inputs,
-                    max_new_tokens=512,
-                    do_sample=False,
-                    pad_token_id=processor.tokenizer.pad_token_id
-                )
-            
-            output_text = processor.tokenizer.decode(outputs[0], skip_special_tokens=True)
-            print(f"Raw prediction: {output_text}")
-
-            # Extract predicted and true rankings
-            true_letters = conv_sample.get("target", "").strip().split(", ")
-            
-            # Find the last line containing a comma-separated list
-            lines = output_text.strip().split('\n')
-            pred_letters = []
-            for line in reversed(lines):
-                if ',' in line:
-                    # Extract and validate the letters
-                    candidate_letters = [l.strip() for l in line.split(',')]
-                    if all(len(letter) == 1 for letter in candidate_letters):
-                        pred_letters = candidate_letters
-                        break
-
-            print(f"Extracted letters: {pred_letters} (length: {len(pred_letters)})")
-            print(f"True letters: {true_letters} (length: {len(true_letters)})")
-
-            # Check for exact match (top-1 accuracy)
-            if pred_letters == true_letters:
-                correct_top1 += 1
-
-            # 5. Compute Spearman correlation
-            print("\n5. Correlation Calculation:")
-            if len(pred_letters) == 5 and len(true_letters) == 5:
-                try:
-                    pred_ranks = [ord(l) - ord('A') + 1 for l in pred_letters]
-                    true_ranks = [ord(l) - ord('A') + 1 for l in true_letters]
-                    rho, _ = spearmanr(pred_ranks, true_ranks)
-                    print(f"Successfully computed correlation: {rho}")
-                    sample_correlations.append(rho)
-                except Exception as e:
-                    print(f"Error computing Spearman's rho: {e}")
-                    sample_correlations.append(-1.0)
-            else:
-                print("Skipping correlation - invalid number of letters")
-                print(f"Expected 5 letters, got {len(pred_letters)} predicted and {len(true_letters)} true")
-                sample_correlations.append(-1.0)
-
-            total_samples += 1
-
-        except Exception as e:
-            print(f"\nError processing sample: {e}")
-            continue
-
-    mean_correlation = np.mean(sample_correlations) if sample_correlations else 0.0
-    top1_accuracy = correct_top1 / total_samples if total_samples > 0 else 0.0
-
+def evaluate_model(
+    model: Qwen2VLForConditionalGeneration,
+    processor: AutoProcessor,
+    converted_test: List[Tuple[List[Dict[str, Any]], List[Image.Image], str]]
+) -> Dict[str, float]:
+    """
+    Evaluates the model on the test set.
+    
+    Args:
+        model: The Qwen2-VL model
+        processor: The model's processor
+        converted_test: List of (conversation, images, expected_ranking) tuples
+    
+    Returns:
+        dict: Metrics including accuracy and correlation scores
+    """
+    results = []
+    
+    for conversation, images, expected_ranking in tqdm(converted_test):
+        result = evaluate_sample(model, processor, conversation, images, expected_ranking)
+        if result is not None:
+            results.append(result)
+    
+    # Calculate metrics
+    total = len(results)
+    if total == 0:
+        return {"top1_accuracy": 0.0, "spearman_correlation": 0.0}
+    
+    # Calculate accuracy and correlation
+    correct = sum(1 for pred, exp in results if pred == exp)
+    accuracy = correct / total
+    
+    # For Spearman correlation, we need to convert rankings to lists
+    pred_rankings = [pred.split(", ") for pred, _ in results]
+    true_rankings = [exp.split(", ") for _, exp in results]
+    
+    correlations = []
+    for pred, true in zip(pred_rankings, true_rankings):
+        # Convert letters to ranks
+        pred_ranks = {letter: rank for rank, letter in enumerate(pred)}
+        true_ranks = {letter: rank for rank, letter in enumerate(true)}
+        
+        # Calculate correlation for this sample
+        correlation = spearmanr(
+            [pred_ranks[letter] for letter in "ABCDE"],
+            [true_ranks[letter] for letter in "ABCDE"]
+        ).correlation
+        correlations.append(correlation)
+    
+    avg_correlation = sum(correlations) / len(correlations)
+    
     return {
-        "top1_accuracy": top1_accuracy,
-        "mean_spearman_correlation": mean_correlation,
-        "total_samples": total_samples
+        "top1_accuracy": accuracy,
+        "spearman_correlation": avg_correlation
     }
 
 def main():
@@ -202,19 +275,30 @@ def main():
     original_model, original_processor = load_original_model(ORIGINAL_MODEL_NAME)
     print("Original model loaded.")
 
+    print("Processor Configuration:")
+    print(f"- Image processor parameters:")
+    print(f"  - do_resize: {original_processor.image_processor.do_resize}")
+    print(f"  - do_rescale: {original_processor.image_processor.do_rescale}")
+    print(f"  - do_normalize: {original_processor.image_processor.do_normalize}")
+    print(f"  - min_pixels: {original_processor.image_processor.min_pixels}")
+    print(f"  - max_pixels: {original_processor.image_processor.max_pixels}")
+    print(f"- Tokenizer parameters:")
+    print(f"  - vocab_size: {original_processor.tokenizer.vocab_size}")
+    print(f"  - model_max_length: {original_processor.tokenizer.model_max_length}")
+    print(f"  - padding_side: {original_processor.tokenizer.padding_side}")
+    print(f"  - pad_token: {original_processor.tokenizer.pad_token}")
+
     # Load finetuned model and processor
-    print("Loading finetuned model...")
-    finetuned_model, finetuned_processor = load_finetuned_model(FINETUNED_MODEL_NAME)
-    print("Finetuned model loaded.")
+    # print("Loading finetuned model...")
+    # finetuned_model, finetuned_processor = load_finetuned_model(FINETUNED_MODEL_NAME)
+    # print("Finetuned model loaded.")
 
     # Convert test dataset to conversation format (if not already)
     print("Converting test dataset...")
     converted_test = []
-    for sample in tqdm(test_dataset, desc="Converting"):
-        converted_sample = utils.convert_to_conversation(sample)
-        # Ensure converted_sample has messages
-        if "messages" in converted_sample and converted_sample["messages"]:
-            converted_test.append(converted_sample)
+    for sample in tqdm(test_dataset):
+        conversation, images, expected_ranking = convert_raw_sample(sample)
+        converted_test.append((conversation, images, expected_ranking))
     print(f"Converted test samples: {len(converted_test)}")
 
     # Evaluate original model
@@ -223,9 +307,9 @@ def main():
     print("Original model evaluation completed.")
 
     # Evaluate finetuned model
-    print("Evaluating finetuned model...")
-    finetuned_metrics = evaluate_model(finetuned_model, finetuned_processor, converted_test)
-    print("Finetuned model evaluation completed.")
+    # print("Evaluating finetuned model...")
+    # finetuned_metrics = evaluate_model(finetuned_model, finetuned_processor, converted_test)
+    # print("Finetuned model evaluation completed.")
 
     # Display Results
     print("\nEvaluation Results:")
@@ -233,10 +317,10 @@ def main():
     print("Original Model:")
     print(f"Top-1 Accuracy: {original_metrics['top1_accuracy']:.3f}")
     print(f"Spearman Correlation: {original_metrics['mean_spearman_correlation']:.3f}")
-    print("-----------------------------------")
-    print("Finetuned Model:")
-    print(f"Top-1 Accuracy: {finetuned_metrics['top1_accuracy']:.3f}")
-    print(f"Spearman Correlation: {finetuned_metrics['mean_spearman_correlation']:.3f}")
+    # print("-----------------------------------")
+    # print("Finetuned Model:")
+    # print(f"Top-1 Accuracy: {finetuned_metrics['top1_accuracy']:.3f}")
+    # print(f"Spearman Correlation: {finetuned_metrics['mean_spearman_correlation']:.3f}")
     print("===================================")
 
 if __name__ == "__main__":
