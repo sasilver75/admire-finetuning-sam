@@ -146,14 +146,6 @@ def convert_dataset(dataset: Dataset) -> List[Tuple[List[Dict[str, Any]], List[I
         converted_data.append((conv, images, ranking))
     return converted_data
 
-
-def debug_model_inputs(inputs: Dict[str, torch.Tensor]) -> None:
-    """Helper function for debugging model inputs"""
-    print("\nModel Input Keys:", inputs.keys())
-    for k, v in inputs.items():
-        if isinstance(v, torch.Tensor):
-            print(f"- {k}: shape={v.shape}, dtype={v.dtype}")
-
 def evaluate_sample(
     model: Qwen2VLForConditionalGeneration,
     processor: AutoProcessor,
@@ -168,6 +160,18 @@ def evaluate_sample(
         Tuple[str, str]: Predicted ranking, expected ranking
     """
     try:
+
+        # Debug image inputs
+        print("\nInput Images:")
+        print(f"Number of images: {len(images)}")
+        print(f"Image sizes: {[img.size for img in images]}")
+        
+        # Debug image processing
+        processed_images = processor.image_processor(images)
+        print("\nProcessed Images:")
+        print(f"Pixel values shape: {processed_images['pixel_values'].shape}")
+        print(f"Pixel values range: [{processed_images['pixel_values'].min():.2f}, {processed_images['pixel_values'].max():.2f}]")
+
         # 1. Format conversation with chat template
         text = processor.apply_chat_template(
             conversation, 
@@ -184,6 +188,13 @@ def evaluate_sample(
             return_tensors="pt",
             padding=True
         )
+
+        print("\nFinal Model Inputs Debug:")
+        for k, v in inputs.items():
+            if isinstance(v, torch.Tensor):
+                print(f"- {k}: shape={v.shape}, dtype={v.dtype}")
+                if k == "pixel_values":
+                    print(f"  range: [{v.min():.2f}, {v.max():.2f}]")
         
         # 3. Debug model inputs
         print("\nModel Input Keys:", inputs.keys())
