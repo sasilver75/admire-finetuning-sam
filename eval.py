@@ -188,12 +188,12 @@ def evaluate_sample(
         # 4. Move to GPU and generate
         inputs = {k: v.cuda() for k, v in inputs.items()}
         with torch.no_grad():
-            outputs = model.generate(
+            outputs = model.generate(  # Currently: T=1.0 Greedy decoding
                 **inputs,
                 do_sample=False,
                 max_new_tokens=32,
                 min_new_tokens=1,
-                pad_token_id=processor.tokenizer.pad_token_id
+                pad_token_id=processor.tokenizer.pad_token_id,
             )
         
         # 5. Decode prediction and extract just the ranking part
@@ -253,7 +253,7 @@ def evaluate_model(
         return {"top1_accuracy": 0.0, "spearman_correlation": 0.0}
     
     # Calculate accuracy and correlation
-    correct = sum(1 for pred, exp in results if pred == exp)
+    correct = sum(1 for pred, exp in results if pred.split(", ")[0] == exp.split(", ")[0])
     accuracy = correct / total
     
     # For Spearman correlation, we need to convert rankings to lists
