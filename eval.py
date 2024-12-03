@@ -103,7 +103,8 @@ def convert_raw_sample(sample: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Li
     Rank the images from most to least relevant, based on how well they represent the compound (in either a literal or idiomatic sense, based on how it's used in the sentence).
     Return the ranking of the images as a comma-separated list of the aliases, from most to least relevant.
     
-    As an example, if your predicted ranking of the images from most to least relevant is B, C, A, E, D, then you should respond with "B, C, A, E, D".
+    As an example of what the structure of your response should look like, if your predicted ranking of the images from most to least relevant were B, C, A, E, D, then you would respond with "B, C, A, E, D".
+    Do not simply copy this example; look at the provided images and determine your own correct ranking of the images.
 
 
     <compound>
@@ -154,7 +155,12 @@ def evaluate_sample(
     images: List[Image.Image],
     expected_ranking: str
 ) -> Optional[Tuple[str, str]]:
-    """Evaluates a single sample using the model."""
+    """
+    Evaluates a single sample using the model.
+
+    Returns:
+        Tuple[str, str]: Predicted ranking, expected ranking
+    """
     try:
         # 1. Format conversation with chat template
         text = processor.apply_chat_template(
@@ -251,20 +257,28 @@ def evaluate_model(
     accuracy = correct / total
     
     # For Spearman correlation, we need to convert rankings to lists
-    pred_rankings = [pred.split(", ") for pred, _ in results]
-    true_rankings = [exp.split(", ") for _, exp in results]
-    
     correlations = []
-    for pred, true in zip(pred_rankings, true_rankings):
-        # Convert letters to ranks
-        pred_ranks = {letter: rank for rank, letter in enumerate(pred)}
-        true_ranks = {letter: rank for rank, letter in enumerate(true)}
+    for pred, true in results:
+        # Convert to lists and debug print
+        pred_list = pred.split(", ")
+        true_list = true.split(", ")
+        print(f"\nPredicted ranking: {pred_list}")
+        print(f"True ranking:     {true_list}")
+        
+        # Convert letters to ranks (5 = highest rank for spearmanr)
+        pred_ranks = []
+        true_ranks = [5, 4, 3, 2, 1]  # Fixed ranks for true ordering
+        
+        # Get predicted ranks based on where each true item appears
+        for item in true_list:
+            pred_ranks.append(5 - pred_list.index(item))
+            
+        print(f"Predicted ranks: {pred_ranks}")
+        print(f"True ranks:     {true_ranks}")
         
         # Calculate correlation for this sample
-        correlation = spearmanr(
-            [pred_ranks[letter] for letter in "ABCDE"],
-            [true_ranks[letter] for letter in "ABCDE"]
-        ).correlation
+        correlation = spearmanr(pred_ranks, true_ranks).correlation
+        print(f"Correlation:    {correlation}")
         correlations.append(correlation)
     
     avg_correlation = sum(correlations) / len(correlations)
@@ -278,7 +292,7 @@ def main():
     # Load test dataset
     print("Loading test dataset...")
     test_dataset = load_dataset(DATASET_NAME, split="test")
-    test_dataset = test_dataset.select(range(50))  # TODO: REMOVE ME!!! FOR TEST ONLY
+    test_dataset = test_dataset.select(range(25))  # TODO: REMOVE ME!!! FOR TEST ONLY
     print(f"Dataset size: {len(test_dataset)}")
 
     # Load original model and processor
