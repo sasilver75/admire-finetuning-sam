@@ -103,6 +103,9 @@ def convert_raw_sample(sample: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Li
     Rank the images from most to least relevant, based on how well they represent the compound (in either a literal or idiomatic sense, based on how it's used in the sentence).
     Return the ranking of the images as a comma-separated list of the aliases, from most to least relevant.
     
+    As an example, if your predicted ranking of the images from most to least relevant is B, C, A, E, D, then you should respond with "B, C, A, E, D".
+
+
     <compound>
     {sample['compound']}
     </compound>
@@ -273,7 +276,7 @@ def main():
     # Load test dataset
     print("Loading test dataset...")
     test_dataset = load_dataset(DATASET_NAME, split="test")
-    test_dataset = test_dataset.select(range(10))  # TODO: REMOVE ME!!! FOR TEST ONLY
+    test_dataset = test_dataset.select(range(50))  # TODO: REMOVE ME!!! FOR TEST ONLY
     print(f"Dataset size: {len(test_dataset)}")
 
     # Load original model and processor
