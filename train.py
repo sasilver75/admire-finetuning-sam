@@ -137,6 +137,7 @@ def main():
         tokenizer, 
         token=hf_token
     )
+    print(f"Model pushed to UCSC-Admire/{finetune_name}")
 
 if __name__ == "__main__":
     main()
