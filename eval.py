@@ -202,6 +202,10 @@ def evaluate_sample(
         print("\nInput Images:")
         print(f"Number of images: {len(images)}")
         print(f"Image sizes: {[img.size for img in images]}")
+        print("\nRaw Image Stats:")
+        print(f"Image modes: {[img.mode for img in images]}")
+        print(f"Image min/max values: {[[(np.array(img)).min(), (np.array(img)).max()] for img in images]}")
+
         
         # Debug image processing
         processed_images = processor.image_processor(images)
@@ -211,6 +215,19 @@ def evaluate_sample(
         print("\nProcessor Output Types:")
         print(f"Processed image type: {type(processed_images['pixel_values'])}")
         print(f"Processed image device: {processed_images['pixel_values'].device if torch.is_tensor(processed_images['pixel_values']) else 'not a tensor'}")
+        print("\nProcessed Image Stats:")
+        print(f"Type: {type(processed_images)}")
+        print(f"Keys: {processed_images.keys()}")
+
+        # Add the suggested debug prints here
+        print("\nSingle Image Processing Test:")
+        single_input = processor(
+            text=["test"],  # Minimal text input
+            images=[images[0]],  # Test with just the first image
+            return_tensors="pt"
+        )
+        print(f"Raw single image shape: {images[0].size}")
+        print(f"Processed single image shape: {single_input.pixel_values.shape}")
 
         # 1. Format conversation with chat template
         text = processor.apply_chat_template(
@@ -228,6 +245,12 @@ def evaluate_sample(
             return_tensors="pt",
             padding=True
         )
+
+        print("\nModel Input Verification:")
+        print(f"Input keys: {inputs.keys()}")
+        for k, v in inputs.items():
+            if torch.is_tensor(v):
+                print(f"{k}: shape={v.shape}, dtype={v.dtype}, device={v.device}")
 
         print("\nFinal Model Inputs Debug:")
         for k, v in inputs.items():
@@ -356,7 +379,7 @@ def main():
     # Load test dataset
     print("Loading test dataset...")
     test_dataset = load_dataset(DATASET_NAME, split="test")
-    test_dataset = test_dataset.select(range(5))  # TODO: REMOVE ME!!! FOR TEST ONLY
+    # test_dataset = test_dataset.select(range(5))  # TODO: REMOVE ME!!! FOR TEST ONLY
     print(f"Dataset size: {len(test_dataset)}")
 
     # Load original model and processor
