@@ -151,39 +151,30 @@ def evaluate_sample(
     images: List[Image.Image],
     expected_ranking: str
 ) -> Optional[Tuple[str, str]]:
-    """
-    Evaluates a single sample using the model.
-    
-    Args:
-        model: The Qwen2-VL model
-        processor: The model's processor
-        conversation: List containing the conversation with image placeholders
-        images: List of 5 PIL images (already shuffled and resized)
-        expected_ranking: String of expected ranking (e.g., "A, B, C, D, E")
-    
-    Returns:
-        tuple: (predicted_ranking, expected_ranking) or None if processing failed
-    """
+    """Evaluates a single sample using the model."""
     try:
-         # 1. Format conversation with chat template
+        # 1. Format conversation with chat template
         text = processor.apply_chat_template(
             conversation, 
-            tokenize=False, 
+            tokenize=False,
             add_generation_prompt=True
         )
         print("\nChat Template Output:")
         print(text)
         
-        # 2. Process inputs
+        # 2. Process inputs according to Qwen2-VL docs
         inputs = processor(
-            text=text,
+            text=[text],  # Note: text needs to be a list
             images=images,
             return_tensors="pt",
             padding=True
         )
         
         # 3. Debug model inputs
-        debug_model_inputs(inputs)
+        print("\nModel Input Keys:", inputs.keys())
+        for k, v in inputs.items():
+            if isinstance(v, torch.Tensor):
+                print(f"- {k}: shape={v.shape}, dtype={v.dtype}")
         
         # 4. Move to GPU and generate
         inputs = {k: v.cuda() for k, v in inputs.items()}
@@ -196,11 +187,26 @@ def evaluate_sample(
                 pad_token_id=processor.tokenizer.pad_token_id
             )
         
-        # 5. Decode prediction
+        # 5. Decode prediction and extract just the ranking part
         predicted_text = processor.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        print(f"\nModel prediction: {predicted_text}")
+        print(f"\nRaw model prediction: {predicted_text}")
         
-        return predicted_text.strip(), expected_ranking.strip()
+        # Extract the actual ranking (after the last "assistant" marker)
+        parts = predicted_text.split("assistant")
+        if len(parts) < 2:
+            print("Warning: No 'assistant' marker found in output")
+            return None
+            
+        ranking_text = parts[-1].strip()
+        print(f"Extracted ranking: {ranking_text}")
+        
+        # Validate the ranking format
+        letters = set("ABCDE,")
+        if not all(c in letters or c.isspace() for c in ranking_text):
+            print(f"Warning: Invalid characters in ranking: {ranking_text}")
+            return None
+            
+        return ranking_text, expected_ranking.strip()
         
     except Exception as e:
         print(f"Error processing sample: {e}")
@@ -227,7 +233,7 @@ def evaluate_model(
     
     for conversation, images, expected_ranking in tqdm(converted_test):
         result = evaluate_sample(model, processor, conversation, images, expected_ranking)
-        if result is not None:
+        if result is not None:  # TODO: Maybe we should count the number of occurrences? What does a result of None mean here?
             results.append(result)
     
     # Calculate metrics
@@ -316,8 +322,7 @@ def main():
     print("===================================")
     print("Original Model:")
     print(f"Top-1 Accuracy: {original_metrics['top1_accuracy']:.3f}")
-    print(f"Spearman Correlation: {original_metrics['mean_spearman_correlation']:.3f}")
-    # print("-----------------------------------")
+    print(f"Spearman Correlation: {original_metrics['spearman_correlation']:.3f}")    # print("-----------------------------------")
     # print("Finetuned Model:")
     # print(f"Top-1 Accuracy: {finetuned_metrics['top1_accuracy']:.3f}")
     # print(f"Spearman Correlation: {finetuned_metrics['mean_spearman_correlation']:.3f}")
