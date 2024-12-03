@@ -208,6 +208,9 @@ def evaluate_sample(
         print("\nProcessed Images:")
         print(f"Pixel values shape: {processed_images['pixel_values'].shape}")
         print(f"Pixel values range: [{processed_images['pixel_values'].min():.2f}, {processed_images['pixel_values'].max():.2f}]")
+        print("\nProcessor Output Types:")
+        print(f"Processed image type: {type(processed_images['pixel_values'])}")
+        print(f"Processed image device: {processed_images['pixel_values'].device if torch.is_tensor(processed_images['pixel_values']) else 'not a tensor'}")
 
         # 1. Format conversation with chat template
         text = processor.apply_chat_template(
@@ -353,7 +356,7 @@ def main():
     # Load test dataset
     print("Loading test dataset...")
     test_dataset = load_dataset(DATASET_NAME, split="test")
-    test_dataset = test_dataset.select(range(25))  # TODO: REMOVE ME!!! FOR TEST ONLY
+    test_dataset = test_dataset.select(range(5))  # TODO: REMOVE ME!!! FOR TEST ONLY
     print(f"Dataset size: {len(test_dataset)}")
 
     # Load original model and processor
