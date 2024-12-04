@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py", line 374, in <module>
+    main()
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py", line 352, in main
+    generated_text = generate_text_from_sample(peft_model, processor, sample)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py", line 150, in generate_text_from_sample
+    for content in sample[1]["content"]:
+                   ~~~~~~^^^
+KeyError: 1

@@ -94,16 +94,20 @@ def _get_shuffled_images_with_ordering(images: list[PIL.Image]) -> tuple[list[PI
     return final_shuffled_images, correct_order_string
 
 
-def format_data(sample: dict) ->  list[dict]:
+def format_data(sample: dict) -> list[dict]:
     """
     analgous to format_data in HFQwenTut: https://huggingface.co/learn/cookbook/en/fine_tuning_vlm_trl
     Takes a row from the original dataset and formats it into the chatbot structure
+    Has to return a dict because dataset.map requires a function that returns a dict.
     """
-    images = [sample[f"image_{i}"] for i in range(1, 6)]
+    # NOTE: Added this option to resize before going to bed
+    images = [sample[f"image_{i}"].resize((384, 384)) for i in range(1, 6)]
+    # images = [sample[f"image_{i}"] for i in range(1, 6)]
+
     shuffled_images, correct_order = _get_shuffled_images_with_ordering(images)
     instruction = _create_instruction(sample)
 
-    # TODO: I'm not including a system message here; should I?
+    # Return a single dictionary representing the conversation
     return [
         {
             "role": "system",
@@ -112,7 +116,7 @@ def format_data(sample: dict) ->  list[dict]:
         {
             "role": "user",
             "content": [
-                *[{"type": "image", "image": img} for img in shuffled_images], # TODO: resize?
+                *[{"type": "image", "image": img} for img in shuffled_images],
                 {"type": "text", "text": instruction}
             ]
         },
@@ -209,6 +213,7 @@ def collate_fn(examples: list[dict]) -> dict:  # TODO: IS RETURN TYPE RIGHT?
     )
     
     # Create labels for training (same as input_ids but with padding masked)
+    # TODO(SAM): CHECK THIS FUNCTION, IS THIS RIGHT? SEE TUTORIALS
     labels = batch["input_ids"].clone()
     labels[labels == processor.tokenizer.pad_token_id] = -100
     batch["labels"] = labels
@@ -222,25 +227,35 @@ def main():
     print(f"Dataset size: {len(dataset)}")
     dataset_dict = dataset.train_test_split(test_size=0.05, seed=42) # Use 5% of the training split as evaluation
     print("Processing datasets...")
-    train_dataset = dataset_dict["train"].map(
-        format_data,
-        batched=True,
-        batch_size=32,
-        num_proc=4
-    )
-    eval_dataset = dataset_dict["test"].map(
-        format_data,
-        batched=True,
-        batch_size=32,
-        num_proc=4
-    )
-    print(f"Train dataset size: {len(train_dataset)}")
-    print(f"Eval dataset size: {len(eval_dataset)}")
+    # train_dataset = dataset_dict["train"].map(
+    #     format_data,
+    #     batched=False,
+    #     # batch_size=32,
+    #     num_proc=1,
+    #     remove_columns=dataset_dict["train"].column_names,
+    #     load_from_cache_file=False,  # Disable caching
+    #     keep_in_memory=False # Not sure what this does yet, but o1 thinks it exists and matters?
+    # )
+    # print(f"Mapped training data")
+    # eval_dataset = dataset_dict["test"].map(
+    #     format_data,
+    #     batched=False,
+    #     # batch_size=32,
+    #     num_proc=1,
+    #     remove_columns=dataset_dict["test"].column_names,
+    #     load_from_cache_file=False,  # Disable caching
+    #     keep_in_memory=False # Not sure what this does yet, but o1 thinks it exists and matters?
+    # )
+    # print(f"Mapped evaluation data")
+    # print(f"Train dataset size: {len(train_dataset)}")
+    # print(f"Eval dataset size: {len(eval_dataset)}")
 
     # Process the datasets
     # print("Processing datasets...")
-    # train_dataset = [format_data(sample) for sample in tqdm(train_dataset, desc="Processing train data")]
-    # eval_dataset = [format_data(sample) for sample in tqdm(eval_dataset, desc="Processing eval data")]
+    train_dataset = dataset_dict["train"]
+    test_dataset = dataset_dict["test"]
+    train_dataset = [format_data(sample) for sample in tqdm(train_dataset, desc="Processing train data")]
+    eval_dataset = [format_data(sample) for sample in tqdm(test_dataset, desc="Processing eval data")]
 
     # Create Bits and Bytes Config
     # The model's weights are quantized to 4-bit, but the computations (activations, gradients) are done in bfloat16 for better numerical stability. 
