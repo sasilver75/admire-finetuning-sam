@@ -221,8 +221,8 @@ def main():
     dataset = load_dataset(DATASET_NAME, split="train")
     print(f"Dataset size: {len(dataset)}")
     dataset_dict = dataset.train_test_split(test_size=0.05, seed=42)  # Use 5% of the training split as evaluation
-    train_dataset = dataset_dict["train"].select(range(25)) # TODO: REMOVE THIS SELECT
-    eval_dataset = dataset_dict["test"].select(range(25))  # TODO: REMOVE THIS SELECT
+    train_dataset = dataset_dict["train"] 
+    eval_dataset = dataset_dict["test"]
     print(f"Train dataset size: {len(train_dataset)}")
     print(f"Eval dataset size: {len(eval_dataset)}")
 
@@ -314,7 +314,7 @@ def main():
     # Conecting to weights and biases
     wandb.init(
         project="qwen2-7b-instruct-trl-sft",
-        name="qwen2-7b-instruct-trl-sft",
+        name=f"qwen2-7b-instruct-trl-sft-{now}",
         config=training_args
     )
 
