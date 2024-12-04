@@ -1,0 +1,8 @@
+{"time":"2024-12-03T23:17:02.208207075-08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-12-03T23:17:02.208220196-08:00","level":"INFO","msg":"created symlink","path":"/home/sam/code/ucsc/243/admire/admire-finetuning-sam/wandb/run-20241203_231702-3mxhtqx2/logs/debug-core.log"}
+{"time":"2024-12-03T23:17:02.310746228-08:00","level":"INFO","msg":"created new stream","id":"3mxhtqx2"}
+{"time":"2024-12-03T23:17:02.310794168-08:00","level":"INFO","msg":"stream: started","id":"3mxhtqx2"}
+{"time":"2024-12-03T23:17:02.310831904-08:00","level":"INFO","msg":"writer: Do: started","stream_id":"3mxhtqx2"}
+{"time":"2024-12-03T23:17:02.310845997-08:00","level":"INFO","msg":"handler: started","stream_id":"3mxhtqx2"}
+{"time":"2024-12-03T23:17:02.310888996-08:00","level":"INFO","msg":"sender: started","stream_id":"3mxhtqx2"}
+{"time":"2024-12-03T23:17:02.653739836-08:00","level":"INFO","msg":"Starting system monitor"}

@@ -1,0 +1,43 @@
+{
+  "os": "Linux-6.5.6-76060506-generic-x86_64-with-glibc2.35",
+  "python": "3.12.6",
+  "startedAt": "2024-12-04T06:51:51.548941Z",
+  "program": "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py",
+  "codePath": "v2/train.py",
+  "git": {
+    "remote": "git@github.com:sasilver75/admire-finetuning-sam.git",
+    "commit": "e99fd93b15a4f5ba312d1242b504a5c2806c84a7"
+  },
+  "email": "sam.silver@regrow.ag",
+  "root": "/home/sam/code/ucsc/243/admire/admire-finetuning-sam",
+  "host": "pop-os",
+  "username": "sam",
+  "executable": "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/bin/python",
+  "codePathLocal": "v2/train.py",
+  "cpu_count": 24,
+  "cpu_count_logical": 32,
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "973837025280",
+      "used": "180768604160"
+    }
+  },
+  "memory": {
+    "total": "67175993344"
+  },
+  "cpu": {
+    "count": 24,
+    "countLogical": 32
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 4090",
+      "memoryTotal": "25757220864",
+      "cudaCores": 16384,
+      "architecture": "Ada"
+    }
+  ],
+  "cudaVersion": "12.6"
+}

@@ -1,0 +1,11 @@
+{"time":"2024-12-03T22:55:19.783680277-08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-12-03T22:55:19.783686756-08:00","level":"INFO","msg":"created symlink","path":"/home/sam/code/ucsc/243/admire/admire-finetuning-sam/wandb/run-20241203_225519-y126wgle/logs/debug-core.log"}
+{"time":"2024-12-03T22:55:19.88620466-08:00","level":"INFO","msg":"created new stream","id":"y126wgle"}
+{"time":"2024-12-03T22:55:19.886253772-08:00","level":"INFO","msg":"stream: started","id":"y126wgle"}
+{"time":"2024-12-03T22:55:19.886286912-08:00","level":"INFO","msg":"writer: Do: started","stream_id":"y126wgle"}
+{"time":"2024-12-03T22:55:19.886344397-08:00","level":"INFO","msg":"sender: started","stream_id":"y126wgle"}
+{"time":"2024-12-03T22:55:19.886383243-08:00","level":"INFO","msg":"handler: started","stream_id":"y126wgle"}
+{"time":"2024-12-03T22:55:20.130864827-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-03T22:55:22.162466942-08:00","level":"INFO","msg":"stream: closing","id":"y126wgle"}
+{"time":"2024-12-03T22:55:22.162477957-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-03T22:55:22.162735491-08:00","level":"INFO","msg":"Stopped system monitor"}
