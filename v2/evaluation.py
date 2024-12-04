@@ -7,7 +7,13 @@ from tqdm import tqdm
 from scipy.stats import spearmanr
 import PIL.Image
 from typing import List, Dict, Tuple, Optional, Any
-from v2.train import format_data, generate_text_from_sample
+from training import format_data, generate_text_from_sample
+import random
+
+RANDOM_SEED = 42
+random.seed(RANDOM_SEED)
+torch.manual_seed(RANDOM_SEED)
+torch.cuda.manual_seed_all(RANDOM_SEED)
 
 # Constants
 MODEL_ORG_NAME = "Qwen"
@@ -96,15 +102,18 @@ def evaluate_model(
     correlations = []
     
     for sample in tqdm(dataset, desc=f"Evaluating {desc}"):
-        # Format the sample as needed by generate_text_from_sample
-        formatted_sample = format_data(sample)
-        
-        # Generate prediction
         try:
-            prediction = generate_text_from_sample(model, processor, formatted_sample)
+            # Format the sample to get both input and ground truth
+            formatted_conversation = format_data(sample)
             
-            # Get ground truth (assuming it's in the sample)
-            ground_truth = sample["correct_order"]
+            # Extract ground truth from assistant's response
+            ground_truth = formatted_conversation[-1]["content"][0]["text"]
+            
+            # Create input conversation (exclude assistant's turn)
+            input_conversation = formatted_conversation[:-1]
+            
+            # Generate prediction
+            prediction = generate_text_from_sample(model, processor, input_conversation)
             
             # Calculate metrics
             accuracy, correlation = evaluate_ranking(prediction, ground_truth)
@@ -128,6 +137,7 @@ def main():
     # Load test dataset
     print("Loading test dataset...")
     test_dataset = load_dataset(DATASET_NAME, split="test")
+    test_dataset = test_dataset.select(range(20))  # TODO: TESTING
     print(f"Test dataset size: {len(test_dataset)}")
     
     # Load base model
