@@ -136,8 +136,7 @@ def evaluate_model(
 def main():
     # Load test dataset
     print("Loading test dataset...")
-    test_dataset = load_dataset(DATASET_NAME, split="test")
-    test_dataset = test_dataset.select(range(20))  # TODO: TESTING
+    test_dataset = load_dataset(DATASET_NAME, split="test")#.select(range(20))  # Remove comment to test
     print(f"Test dataset size: {len(test_dataset)}")
     
     # Load base model

@@ -282,11 +282,11 @@ def main():
     # Configure QLoRA (Unlike standard LoRA, which reduces memory by applying a low-rank approximation,
     # takes it a step further by quantizing the weights of the LoRA adapters, leading to even lower memory requirements)
     peft_config = LoraConfig(
-        lora_alpha=16,
+        lora_alpha=32,
         lora_dropout=0.05,
-        r=8,
+        r=32,
         bias="none",
-        target_modules=["q_proj", "v_proj"],
+        target_modules=["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         task_type="CAUSAL_LM"
     )
 
@@ -303,18 +303,19 @@ def main():
         num_train_epochs=3,  # Number of training epochs
         per_device_train_batch_size=1,  # Batch size for training
         per_device_eval_batch_size=1,  # Batch size for evaluation
-        gradient_accumulation_steps=8,  # Steps to accumulate gradients
+        gradient_accumulation_steps=16,  # Steps to accumulate gradients
         gradient_checkpointing=True,  # Enable gradient checkpointing for memory efficiency
         # Optimizer and scheduler settings
-        optim="adamw_torch_fused",  # Optimizer type
+        optim="adamw_8bit",  # Optimizer type
         learning_rate=2e-4,  # Learning rate for training
-        lr_scheduler_type="constant",  # Type of learning rate scheduler
+        lr_scheduler_type="cosine_with_restarts",  # Type of learning rate scheduler
+        weight_decay=0.05,
         # Logging and evaluation
         logging_steps=10,  # Steps interval for logging
-        eval_steps=20,  # Steps interval for evaluation
+        eval_steps=40,  # Steps interval for evaluation
         eval_strategy="steps",  # Strategy for evaluation
         save_strategy="steps",  # Strategy for saving the model
-        save_steps=20,  # Steps interval for saving
+        save_steps=200,  # Steps interval for saving
         metric_for_best_model="eval_loss",  # Metric to evaluate the best model
         greater_is_better=False,  # Whether higher metric values are better
         load_best_model_at_end=True,  # Load the best model after training
@@ -322,7 +323,7 @@ def main():
         bf16=True,  # Use bfloat16 precision
         tf32=True,  # Use TensorFloat-32 precision
         max_grad_norm=0.3,  # Maximum norm for gradient clipping
-        warmup_ratio=0.03,  # Ratio of total steps for warmup
+        warmup_ratio=0.1,  # Ratio of total steps for warmup
         # Hub and reporting
         push_to_hub=True,  # Whether to push model to Hugging Face Hub
         hub_model_id=f"UCSC-Admire/Qwen2-VL-7B-Instruct-finetune-{now}",
