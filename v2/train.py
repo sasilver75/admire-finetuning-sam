@@ -1,8 +1,10 @@
+from datetime import datetime
 import random
 import PIL
 from dotenv import load_dotenv
 import os
 import torch
+from tqdm import tqdm
 from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor, BitsAndBytesConfig
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model
@@ -30,6 +32,8 @@ RANDOM_SEED = 42
 random.seed(RANDOM_SEED)
 torch.manual_seed(RANDOM_SEED)
 torch.cuda.manual_seed_all(RANDOM_SEED)
+
+processor = None  # Have to make this a global so that collate_fn can access it; wouldn't be a problem in the notebook.
 
 
 def _create_instruction(row: dict) -> str:
@@ -171,16 +175,45 @@ def collate_fn(examples: list[dict]) -> dict:  # TODO: IS RETURN TYPE RIGHT?
     Collate function to properly retrieve and batch the data during the training procedure
     Handles formatting of our dataset inputs, ensuring they're correctly structured for model
     
-    USed to preprocess both training and evaluation batches, and the length of the list is determined
+    Used to preprocess both training and evaluation batches, and the length of the list is determined
     by the respecitve batch size:
-        -  For training: per_device_train_batch_size
-        -  For evaluation: per_device_eval_batch_size
+        -  For training: per_device_train_batch_size (1)
+        -  For evaluation: per_device_eval_batch_size (1)
+    Each element in the list is a list of dicts as returned from format_data
     """
+    global processor
+    if processor is None:
+        raise ValueError("Processor is not set")
+
+    # Since we're getting a list of conversations, we need to process each one
+    formatted_texts = []
+    all_images = []
     
-
-
-    # TODO
-    print("here")
+    for conversation in examples:  # Usually just one conversation due to batch_size=1
+        # Apply chat template to format the conversation
+        text = processor.apply_chat_template(conversation, tokenize=False)
+        formatted_texts.append(text)
+        
+        # Extract images from the user turn
+        user_turn = [turn for turn in conversation if turn["role"] == "user"][0]
+        images = [content["image"] for content in user_turn["content"] 
+                 if content["type"] == "image"]
+        all_images.extend(images)
+    
+    # Process both text and images together
+    batch = processor(
+        text=formatted_texts,
+        images=all_images,
+        return_tensors="pt",
+        padding=True
+    )
+    
+    # Create labels for training (same as input_ids but with padding masked)
+    labels = batch["input_ids"].clone()
+    labels[labels == processor.tokenizer.pad_token_id] = -100
+    batch["labels"] = labels
+    
+    return batch
 
 def main():
     # Load training dataset
@@ -188,15 +221,15 @@ def main():
     dataset = load_dataset(DATASET_NAME, split="train")
     print(f"Dataset size: {len(dataset)}")
     dataset_dict = dataset.train_test_split(test_size=0.05, seed=42)  # Use 5% of the training split as evaluation
-    train_dataset = dataset_dict["train"]
-    eval_dataset = dataset_dict["test"]
+    train_dataset = dataset_dict["train"].select(range(25)) # TODO: REMOVE THIS SELECT
+    eval_dataset = dataset_dict["test"].select(range(25))  # TODO: REMOVE THIS SELECT
     print(f"Train dataset size: {len(train_dataset)}")
     print(f"Eval dataset size: {len(eval_dataset)}")
 
     # Process the datasets
     print("Processing datasets...")
-    train_dataset = [format_data(sample) for sample in train_dataset]
-    eval_dataset = [format_data(sample) for sample in eval_dataset]
+    train_dataset = [format_data(sample) for sample in tqdm(train_dataset, desc="Processing train data")]
+    eval_dataset = [format_data(sample) for sample in tqdm(eval_dataset, desc="Processing eval data")]
 
     # Create Bits and Bytes Config
     bnb_config = BitsAndBytesConfig(
@@ -211,7 +244,12 @@ def main():
         quantization_config=bnb_config
     )
     print("Loading processor...")
-    processor = Qwen2VLProcessor.from_pretrained(f"{MODEL_ORG_NAME}/{MODEL_NAME}")
+    global processor
+    processor = Qwen2VLProcessor.from_pretrained(
+        f"{MODEL_ORG_NAME}/{MODEL_NAME}",
+        min_pixels=256*28*28,  # Minimum number of pixels (256 tokens)
+        max_pixels=448*28*28   # Maximum number of pixels (448 tokens instead of 1024 for memory savings)
+    )
 
     # Configure QLoRA (Unlike standard LoRA, which reduces memory by applying a low-rank approximation,
     # takes it a step further by quantizing the weights of the LoRA adapters, leading to even lower memory requirements)
@@ -231,11 +269,12 @@ def main():
     peft_model.print_trainable_parameters()
 
     # Configure training arguments
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     training_args = SFTConfig(
-        output_dir="qwen2-7b-instruct-trl-sft-ChartQA",  # Directory to save the model
+        output_dir="qwen2-7b-instruct-trl-sft-ADMIRE",  # Directory to save the model
         num_train_epochs=3,  # Number of training epochs
-        per_device_train_batch_size=4,  # Batch size for training
-        per_device_eval_batch_size=4,  # Batch size for evaluation
+        per_device_train_batch_size=1,  # Batch size for training
+        per_device_eval_batch_size=1,  # Batch size for evaluation
         gradient_accumulation_steps=8,  # Steps to accumulate gradients
         gradient_checkpointing=True,  # Enable gradient checkpointing for memory efficiency
         # Optimizer and scheduler settings
@@ -244,7 +283,7 @@ def main():
         lr_scheduler_type="constant",  # Type of learning rate scheduler
         # Logging and evaluation
         logging_steps=10,  # Steps interval for logging
-        eval_steps=10,  # Steps interval for evaluation
+        eval_steps=20,  # Steps interval for evaluation
         eval_strategy="steps",  # Strategy for evaluation
         save_strategy="steps",  # Strategy for saving the model
         save_steps=20,  # Steps interval for saving
@@ -258,6 +297,8 @@ def main():
         warmup_ratio=0.03,  # Ratio of total steps for warmup
         # Hub and reporting
         push_to_hub=True,  # Whether to push model to Hugging Face Hub
+        hub_model_id=f"UCSC-Admire/Qwen2-VL-7B-Instruct-finetune-{now}",
+        hub_token=hf_token,
         report_to="wandb",  # Reporting tool for tracking metrics
         # Gradient checkpointing settings
         gradient_checkpointing_kwargs={"use_reentrant": False},  # Options for gradient checkpointing
@@ -275,6 +316,11 @@ def main():
         config=training_args
     )
 
+    # Try generating text from a sample
+    sample = train_dataset[0]
+    generated_text = generate_text_from_sample(peft_model, processor, sample)
+    print(generated_text)
+
     trainer = SFTTrainer(
         model=peft_model,
         args=training_args,
@@ -290,14 +336,6 @@ def main():
     trainer.train()
 
     trainer.save_model(training_args.output_dir)
-    
-
-
-
-
-
-
-    
 
 
 if __name__ == "__main__":

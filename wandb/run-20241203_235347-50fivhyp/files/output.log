@@ -1,0 +1,27 @@
+E, B, C, A, D
+/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/trl/trainer/sft_trainer.py:309: UserWarning: You didn't pass a `max_seq_length` argument to the SFTTrainer, this will default to 1024
+  warnings.warn(
+/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/trl/trainer/sft_trainer.py:403: UserWarning: You passed a processing_class with `padding_side` not equal to `right` to the SFTTrainer. This might lead to some unexpected behaviour due to overflow issues when training a model in half-precision. You might consider adding `processing_class.padding_side = 'right'` to your code.
+  warnings.warn(
+Training the model...
+[34m[1mwandb[0m: [33mWARNING[0m The `run_name` is currently set to the same value as `TrainingArguments.output_dir`. If this was not intended, please specify a different run name by setting the `TrainingArguments.run_name` parameter.
+  0%|                                                                                                                                                                               | 0/3 [00:00<?, ?it/s]Traceback (most recent call last):
+here
+here
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py", line 314, in <module>
+    main()
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py", line 300, in main
+    trainer.train()
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/trainer.py", line 2114, in train
+    return inner_training_loop(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/trainer.py", line 2481, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/trainer.py", line 3573, in training_step
+    inputs = self._prepare_inputs(inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/trainer.py", line 3521, in _prepare_inputs
+    if len(inputs) == 0:
+       ^^^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()

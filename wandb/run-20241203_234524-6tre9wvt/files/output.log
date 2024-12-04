@@ -1,0 +1,70 @@
+Traceback (most recent call last):
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py", line 310, in <module>
+    main()
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py", line 281, in main
+    generated_text = generate_text_from_sample(peft_model, processor, sample)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/v2/train.py", line 153, in generate_text_from_sample
+    generated_ids = model.generate(**model_inputs, max_new_tokens=max_new_tokens)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/peft/peft_model.py", line 1704, in generate
+    outputs = self.base_model.generate(*args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/generation/utils.py", line 2215, in generate
+    result = self._sample(
+             ^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/generation/utils.py", line 3206, in _sample
+    outputs = self(**model_inputs, return_dict=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/accelerate/hooks.py", line 170, in new_forward
+    output = module._old_forward(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/models/qwen2_vl/modeling_qwen2_vl.py", line 1686, in forward
+    image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/accelerate/hooks.py", line 170, in new_forward
+    output = module._old_forward(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/models/qwen2_vl/modeling_qwen2_vl.py", line 1049, in forward
+    hidden_states = blk(hidden_states, cu_seqlens=cu_seqlens, rotary_pos_emb=rotary_pos_emb)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/accelerate/hooks.py", line 170, in new_forward
+    output = module._old_forward(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/models/qwen2_vl/modeling_qwen2_vl.py", line 431, in forward
+    hidden_states = hidden_states + self.attn(
+                                    ^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/accelerate/hooks.py", line 170, in new_forward
+    output = module._old_forward(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sam/code/ucsc/243/admire/admire-finetuning-sam/venv/lib/python3.12/site-packages/transformers/models/qwen2_vl/modeling_qwen2_vl.py", line 404, in forward
+    attn_output = F.scaled_dot_product_attention(q, k, v, attention_mask, dropout_p=0.0)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 44.68 GiB. GPU 0 has a total capacity of 23.55 GiB of which 12.80 GiB is free. Process 616009 has 29.04 MiB memory in use. Including non-PyTorch memory, this process has 10.07 GiB memory in use. Of the allocated memory 8.99 GiB is allocated by PyTorch, and 648.71 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

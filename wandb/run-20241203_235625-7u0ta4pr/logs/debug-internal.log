@@ -1,0 +1,16 @@
+{"time":"2024-12-03T23:56:25.602470996-08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-12-03T23:56:25.602477348-08:00","level":"INFO","msg":"created symlink","path":"/home/sam/code/ucsc/243/admire/admire-finetuning-sam/wandb/run-20241203_235625-7u0ta4pr/logs/debug-core.log"}
+{"time":"2024-12-03T23:56:25.704251843-08:00","level":"INFO","msg":"created new stream","id":"7u0ta4pr"}
+{"time":"2024-12-03T23:56:25.704266184-08:00","level":"INFO","msg":"stream: started","id":"7u0ta4pr"}
+{"time":"2024-12-03T23:56:25.704309498-08:00","level":"INFO","msg":"handler: started","stream_id":"7u0ta4pr"}
+{"time":"2024-12-03T23:56:25.704316565-08:00","level":"INFO","msg":"writer: Do: started","stream_id":"7u0ta4pr"}
+{"time":"2024-12-03T23:56:25.704330227-08:00","level":"INFO","msg":"sender: started","stream_id":"7u0ta4pr"}
+{"time":"2024-12-03T23:56:25.942408075-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T00:14:33.441768857-08:00","level":"INFO","msg":"stream: closing","id":"7u0ta4pr"}
+{"time":"2024-12-04T00:14:33.441799784-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T00:14:33.442285376-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T00:14:33.990758479-08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-12-04T00:14:34.153732473-08:00","level":"INFO","msg":"handler: closed","stream_id":"7u0ta4pr"}
+{"time":"2024-12-04T00:14:34.153759461-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"7u0ta4pr"}
+{"time":"2024-12-04T00:14:34.153786857-08:00","level":"INFO","msg":"sender: closed","stream_id":"7u0ta4pr"}
+{"time":"2024-12-04T00:14:34.153789242-08:00","level":"INFO","msg":"stream: closed","id":"7u0ta4pr"}
