@@ -453,6 +453,8 @@ Spearman Correlation: 0.0588
 ==================================================
 
 
+Note that this training run seemed to use about 15GB of GPU memory
+
 -----------
 Okay, I'm curious if I was overfitting at all.
 Let's see what we might want to change

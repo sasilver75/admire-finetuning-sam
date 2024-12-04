@@ -322,7 +322,7 @@ def main():
         # Mixed precision and gradient settings
         bf16=True,  # Use bfloat16 precision
         tf32=True,  # Use TensorFloat-32 precision
-        max_grad_norm=0.3,  # Maximum norm for gradient clipping
+        max_grad_norm=1,  # Maximum norm for gradient clipping
         warmup_ratio=0.1,  # Ratio of total steps for warmup
         # Hub and reporting
         push_to_hub=True,  # Whether to push model to Hugging Face Hub
