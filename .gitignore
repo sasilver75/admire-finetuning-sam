@@ -6,3 +6,5 @@ venv/
 outputs/
 unsloth_compiled_cache/
 UCSC-Admire/
+qwen2-7b-instruct-trl-sft-ADMIRE/
+wandb/
