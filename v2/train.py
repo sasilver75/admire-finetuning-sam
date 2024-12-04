@@ -232,6 +232,8 @@ def main():
     eval_dataset = [format_data(sample) for sample in tqdm(eval_dataset, desc="Processing eval data")]
 
     # Create Bits and Bytes Config
+    # The model's weights are quantized to 4-bit, but the computations (activations, gradients) are done in bfloat16 for better numerical stability. 
+    # This combination gives you both memory efficiency (from 4-bit quantization) and training stability (from bfloat16 compute).
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True, bnb_4bit_use_double_quant=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16
     )
@@ -241,14 +243,14 @@ def main():
         pretrained_model_name_or_path=f"{MODEL_ORG_NAME}/{MODEL_NAME}",
         device_map="auto",
         torch_dtype=torch.bfloat16,
-        quantization_config=bnb_config
+        quantization_config=bnb_config,
     )
     print("Loading processor...")
     global processor
     processor = Qwen2VLProcessor.from_pretrained(
         f"{MODEL_ORG_NAME}/{MODEL_NAME}",
         min_pixels=256*28*28,  # Minimum number of pixels (256 tokens)
-        max_pixels=448*28*28   # Maximum number of pixels (448 tokens instead of 1024 for memory savings)
+        max_pixels=384*28*28   # Maximum number of pixels (384 tokens instead of 1024 for memory savings)
     )
 
     # Configure QLoRA (Unlike standard LoRA, which reduces memory by applying a low-rank approximation,
@@ -316,7 +318,7 @@ def main():
         config=training_args
     )
 
-    # Try generating text from a sample
+    # Try generating text from a sample, does it work? Yes!
     sample = train_dataset[0]
     generated_text = generate_text_from_sample(peft_model, processor, sample)
     print(generated_text)
@@ -335,8 +337,10 @@ def main():
     print("Training the model...")
     trainer.train()
 
+    print(f"Saving model to {training_args.output_dir}...")
     trainer.save_model(training_args.output_dir)
 
 
 if __name__ == "__main__":
     main()
+    print("DONE!")

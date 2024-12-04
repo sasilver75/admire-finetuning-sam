@@ -1,0 +1,16 @@
+{"time":"2024-12-04T00:16:33.262064519-08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
+{"time":"2024-12-04T00:16:33.262073582-08:00","level":"INFO","msg":"created symlink","path":"/home/sam/code/ucsc/243/admire/admire-finetuning-sam/wandb/run-20241204_001633-fpdd3zyl/logs/debug-core.log"}
+{"time":"2024-12-04T00:16:33.364540587-08:00","level":"INFO","msg":"created new stream","id":"fpdd3zyl"}
+{"time":"2024-12-04T00:16:33.36459037-08:00","level":"INFO","msg":"stream: started","id":"fpdd3zyl"}
+{"time":"2024-12-04T00:16:33.36463433-08:00","level":"INFO","msg":"writer: Do: started","stream_id":"fpdd3zyl"}
+{"time":"2024-12-04T00:16:33.364714318-08:00","level":"INFO","msg":"sender: started","stream_id":"fpdd3zyl"}
+{"time":"2024-12-04T00:16:33.364855421-08:00","level":"INFO","msg":"handler: started","stream_id":"fpdd3zyl"}
+{"time":"2024-12-04T00:16:33.719071143-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T00:17:35.210242859-08:00","level":"INFO","msg":"stream: closing","id":"fpdd3zyl"}
+{"time":"2024-12-04T00:17:35.21032152-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T00:17:35.211663583-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T00:17:37.21594742-08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-12-04T00:17:37.367506215-08:00","level":"INFO","msg":"handler: closed","stream_id":"fpdd3zyl"}
+{"time":"2024-12-04T00:17:37.367588416-08:00","level":"INFO","msg":"sender: closed","stream_id":"fpdd3zyl"}
+{"time":"2024-12-04T00:17:37.367591491-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"fpdd3zyl"}
+{"time":"2024-12-04T00:17:37.367745291-08:00","level":"INFO","msg":"stream: closed","id":"fpdd3zyl"}
