@@ -220,16 +220,27 @@ def main():
     print("Loading dataset...")
     dataset = load_dataset(DATASET_NAME, split="train")
     print(f"Dataset size: {len(dataset)}")
-    dataset_dict = dataset.train_test_split(test_size=0.05, seed=42)  # Use 5% of the training split as evaluation
-    train_dataset = dataset_dict["train"] 
-    eval_dataset = dataset_dict["test"]
+    dataset_dict = dataset.train_test_split(test_size=0.05, seed=42) # Use 5% of the training split as evaluation
+    print("Processing datasets...")
+    train_dataset = dataset_dict["train"].map(
+        format_data,
+        batched=True,
+        batch_size=32,
+        num_proc=4
+    )
+    eval_dataset = dataset_dict["test"].map(
+        format_data,
+        batched=True,
+        batch_size=32,
+        num_proc=4
+    )
     print(f"Train dataset size: {len(train_dataset)}")
     print(f"Eval dataset size: {len(eval_dataset)}")
 
     # Process the datasets
-    print("Processing datasets...")
-    train_dataset = [format_data(sample) for sample in tqdm(train_dataset, desc="Processing train data")]
-    eval_dataset = [format_data(sample) for sample in tqdm(eval_dataset, desc="Processing eval data")]
+    # print("Processing datasets...")
+    # train_dataset = [format_data(sample) for sample in tqdm(train_dataset, desc="Processing train data")]
+    # eval_dataset = [format_data(sample) for sample in tqdm(eval_dataset, desc="Processing eval data")]
 
     # Create Bits and Bytes Config
     # The model's weights are quantized to 4-bit, but the computations (activations, gradients) are done in bfloat16 for better numerical stability. 
