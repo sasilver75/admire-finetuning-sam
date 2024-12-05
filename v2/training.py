@@ -320,7 +320,7 @@ def main():
     now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     training_args = SFTConfig(
         output_dir="qwen2-7b-instruct-trl-sft-ADMIRE",  # Directory to save the model
-        num_train_epochs=3,  # Number of training epochs
+        num_train_epochs=1,  # Number of training epochs
         per_device_train_batch_size=1,  # Batch size for training
         per_device_eval_batch_size=1,  # Batch size for evaluation
         gradient_accumulation_steps=16,  # Steps to accumulate gradients

@@ -19,7 +19,7 @@ torch.cuda.manual_seed_all(RANDOM_SEED)
 MODEL_ORG_NAME = "Qwen"
 MODEL_NAME = "Qwen2-VL-7B-Instruct"
 DATASET_NAME = "UCSC-Admire/idiom-dataset-561-2024-12-02_11-48-08"
-FINETUNED_MODEL_NAME = "UCSC-Admire/Qwen2-VL-7B-Instruct-finetune-2024-12-04_12-05-35"
+FINETUNED_MODEL_NAME = "UCSC-Admire/Qwen2-VL-7B-Instruct-finetune-2024-12-05_11-26-00"
 
 def load_base_model() -> Tuple[Qwen2VLForConditionalGeneration, Qwen2VLProcessor]:
     """
