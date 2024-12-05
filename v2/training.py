@@ -236,6 +236,8 @@ def collate_fn(examples: list[dict]) -> dict:  # TODO: IS RETURN TYPE RIGHT?
 
     batch["labels"] = labels
 
+    # print("Sequence length:", batch["input_ids"].shape[-1])
+
     return batch
 
 def main():
@@ -352,7 +354,7 @@ def main():
         # Dataset configuration
         dataset_text_field="",  # Text field in dataset
         dataset_kwargs={"skip_prepare_dataset": True},  # Additional dataset options
-        # max_seq_length=1024  # Maximum sequence length for input
+        max_seq_length=2048  # Maximum sequence length for input
     )
     training_args.remove_unused_columns = False  # Keep unused columns in dataset
 
