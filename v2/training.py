@@ -218,8 +218,24 @@ def collate_fn(examples: list[dict]) -> dict:  # TODO: IS RETURN TYPE RIGHT?
     # TODO(SAM): CHECK THIS FUNCTION, IS THIS RIGHT? SEE TUTORIALS
     labels = batch["input_ids"].clone()
     labels[labels == processor.tokenizer.pad_token_id] = -100
-    batch["labels"] = labels
+
+    # Mask image tokens (as shown in the HF tutorial)
+    image_tokens = [151652, 151653, 151655]  # Specific image token IDs for Qwen2VLProcessor
+    for image_token_id in image_tokens:
+        labels[labels == image_token_id] = -100
+
+    # Find and mask everything except assistant's response
+    assistant_token = processor.tokenizer.convert_tokens_to_ids("assistant")
     
+    # # For each sequence in the batch
+    for i in range(len(labels)):
+        # Find position of assistant token
+        assistant_pos = (labels[i] == assistant_token).nonzero().item()        
+        # Mask everything before and including assistant; we don't care for the model to learn those.
+        labels[i, :assistant_pos+1] = -100  # Mask before assistant
+
+    batch["labels"] = labels
+
     return batch
 
 def main():
