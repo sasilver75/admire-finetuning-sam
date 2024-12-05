@@ -19,7 +19,7 @@ torch.cuda.manual_seed_all(RANDOM_SEED)
 MODEL_ORG_NAME = "Qwen"
 MODEL_NAME = "Qwen2-VL-7B-Instruct"
 DATASET_NAME = "UCSC-Admire/idiom-dataset-561-2024-12-02_11-48-08"
-FINETUNED_MODEL_NAME = "UCSC-Admire/Qwen2-VL-7B-Instruct-finetune-2024-12-04_02-08-26"
+FINETUNED_MODEL_NAME = "UCSC-Admire/Qwen2-VL-7B-Instruct-finetune-2024-12-04_12-05-35"
 
 def load_base_model() -> Tuple[Qwen2VLForConditionalGeneration, Qwen2VLProcessor]:
     """
@@ -72,6 +72,9 @@ def evaluate_ranking(prediction: str, ground_truth: str) -> Tuple[float, float]:
         # Clean and split the rankings
         pred_list = [x.strip() for x in prediction.split(",")]
         true_list = [x.strip() for x in ground_truth.split(",")]
+
+        print(f"Prediction: {pred_list}")
+        print(f"Ground truth: {true_list}\n")
         
         # Calculate top-1 accuracy (1.0 if first elements match, 0.0 otherwise)
         top1_accuracy = float(pred_list[0] == true_list[0])

@@ -46,7 +46,9 @@ def _create_instruction(row: dict) -> str:
     Return the ranking of the images as a comma-separated list of the aliases, from most to least relevant.
     
     As an example, if your predicted ranking from most to least relevant is B, C, A, E, D, then you should respond with "B, C, A, E, D".
-    
+    Make sure that all aliases are used in your ranking, and that each is used exactly once.
+    A response of a single alias (e.g. "A") is NOT an acceptable response; include all 5 aliasses in relevancy order (descending).
+
     <compound>
     {row["compound"]}
     </compound>
