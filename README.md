@@ -21,3 +21,5 @@ This ensures that everyone has access the same pinned, resolved versions of depe
 
 Hey Sicong. All of the code that we actually used is in the `/v2` folder. The stuff outside the v2 folder (top-level) were failed attempts to use Unsloth. I ended up just using TRL.
 Edit: I cut a bunch of files from the top-level that ended up not being relevant. A lot of work there, but nothing that made it into the final finetune/eval.
+
+Note: the other part of this project's code submission is the Synthetic Data pipeline here: https://github.com/sasilver75/admire-pipeline
