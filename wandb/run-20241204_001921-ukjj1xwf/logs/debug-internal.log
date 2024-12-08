@@ -1,8 +1,0 @@
-{"time":"2024-12-04T00:19:21.39295285-08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
-{"time":"2024-12-04T00:19:21.392959956-08:00","level":"INFO","msg":"created symlink","path":"/home/sam/code/ucsc/243/admire/admire-finetuning-sam/wandb/run-20241204_001921-ukjj1xwf/logs/debug-core.log"}
-{"time":"2024-12-04T00:19:21.496216686-08:00","level":"INFO","msg":"created new stream","id":"ukjj1xwf"}
-{"time":"2024-12-04T00:19:21.496265422-08:00","level":"INFO","msg":"stream: started","id":"ukjj1xwf"}
-{"time":"2024-12-04T00:19:21.496303914-08:00","level":"INFO","msg":"handler: started","stream_id":"ukjj1xwf"}
-{"time":"2024-12-04T00:19:21.496333612-08:00","level":"INFO","msg":"sender: started","stream_id":"ukjj1xwf"}
-{"time":"2024-12-04T00:19:21.496329484-08:00","level":"INFO","msg":"writer: Do: started","stream_id":"ukjj1xwf"}
-{"time":"2024-12-04T00:19:21.791933207-08:00","level":"INFO","msg":"Starting system monitor"}

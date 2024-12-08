@@ -1,8 +1,0 @@
-{"time":"2024-12-03T23:20:28.561662325-08:00","level":"INFO","msg":"using version","core version":"0.18.7"}
-{"time":"2024-12-03T23:20:28.56167154-08:00","level":"INFO","msg":"created symlink","path":"/home/sam/code/ucsc/243/admire/admire-finetuning-sam/wandb/run-20241203_232028-wp5takwz/logs/debug-core.log"}
-{"time":"2024-12-03T23:20:28.664775326-08:00","level":"INFO","msg":"created new stream","id":"wp5takwz"}
-{"time":"2024-12-03T23:20:28.664820367-08:00","level":"INFO","msg":"stream: started","id":"wp5takwz"}
-{"time":"2024-12-03T23:20:28.664867351-08:00","level":"INFO","msg":"writer: Do: started","stream_id":"wp5takwz"}
-{"time":"2024-12-03T23:20:28.664863922-08:00","level":"INFO","msg":"handler: started","stream_id":"wp5takwz"}
-{"time":"2024-12-03T23:20:28.6648867-08:00","level":"INFO","msg":"sender: started","stream_id":"wp5takwz"}
-{"time":"2024-12-03T23:20:28.9279625-08:00","level":"INFO","msg":"Starting system monitor"}
